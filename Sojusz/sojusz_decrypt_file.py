@@ -150,8 +150,9 @@ if filename.endswith(RANSOM_EXT_POSTFIX + RANSOM_EXT):
     pos = filename.rfind(RANSOM_EXT_POSTFIX + RANSOM_EXT_PREFIX, 0, pos)
     if pos > ID_SIZE + len(RANSOM_EXT_PREFIX):
         pos -= ID_SIZE + len(RANSOM_EXT_PREFIX)
-        if filename[pos : pos + 2] == RANSOM_EXT_PREFIX:
-            enc_id = filename[pos + 2 : pos + 2 + ID_SIZE]
+        if filename[pos : pos + len(RANSOM_EXT_PREFIX)] == RANSOM_EXT_PREFIX:
+            enc_id = filename[pos + len(RANSOM_EXT_PREFIX):
+                              pos + len(RANSOM_EXT_PREFIX) + ID_SIZE]
             print('ID:', enc_id)
             new_filename = filename[:pos]
 
