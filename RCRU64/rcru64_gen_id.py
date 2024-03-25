@@ -64,7 +64,7 @@ def mersenne_gen(twister: list) -> None:
 
     for i in range(624):
         v = (twister[i] & 0x80000000) + (twister[(i + 1) % 624] & 0x7FFFFFFF)
-        twister[i] = twister[(i + 397) % 624] ^ (v >> 1);
+        twister[i] = twister[(i + 397) % 624] ^ (v >> 1)
         if (v & 1) != 0:
             twister[i] ^= 0x9908B0DF
 
