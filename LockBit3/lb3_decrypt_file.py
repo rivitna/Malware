@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2023 Andrey Zhdanov (rivitna)
+# Copyright (c) 2023-2024 Andrey Zhdanov (rivitna)
 # https://github.com/rivitna
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -147,17 +147,12 @@ def decrypt_file(filename, metadata):
 
     pos = len(metadata) - MIN_METADATA_SIZE + 2
 
-    # Block space
-    block_space, = struct.unpack_from('<Q', metadata, pos)
-    pos += 8
-
-    # First area block last index
-    first_area_last_block, = struct.unpack_from('<L', metadata, pos)
-    pos += 4
-
-    # Next area block last index
-    next_area_last_block, = struct.unpack_from('<L', metadata, pos)
-    pos += 4
+    # Block space, first area block last index, next area block last index
+    chunk_space, first_chunk_last_block, next_chunk_last_block = \
+        struct.unpack_from('<QLL', metadata, pos)
+    first_chunk_size = (first_chunk_last_block + 1) * ENCRYPT_BLOCK_SIZE
+    next_chunk_size = (next_chunk_last_block + 1) * ENCRYPT_BLOCK_SIZE
+    pos += 16
 
     # Set Salsa decryption key
     key_data = metadata[pos : pos + lb3_crypt.SALSA_KEY_DATA_SIZE]
@@ -166,28 +161,30 @@ def decrypt_file(filename, metadata):
     with io.open(filename, 'rb+') as f:
 
         # Decrypt first area
-        enc_data = f.read((first_area_last_block + 1) * ENCRYPT_BLOCK_SIZE)
-        dec_data = cipher.decrypt(enc_data)
+        enc_data = f.read(first_chunk_size)
+        data = cipher.decrypt(enc_data)
         f.seek(0)
-        f.write(dec_data)
+        f.write(data)
 
-        if block_space != 0:
+        if chunk_space != 0:
 
-            file_pos = first_area_last_block * ENCRYPT_BLOCK_SIZE + block_space
+            pos = first_chunk_last_block * ENCRYPT_BLOCK_SIZE + chunk_space
+            chunk_step = (next_chunk_last_block * ENCRYPT_BLOCK_SIZE +
+                          chunk_space)
 
             while True:
 
                 # Decrypt next area
-                f.seek(file_pos)
-                enc_data = f.read((next_area_last_block + 1) * ENCRYPT_BLOCK_SIZE)
+                f.seek(pos)
+                enc_data = f.read(next_chunk_size)
                 if enc_data == b'':
                     break
 
-                dec_data = cipher.decrypt(enc_data)
-                f.seek(file_pos)
-                f.write(dec_data)
+                data = cipher.decrypt(enc_data)
+                f.seek(pos)
+                f.write(data)
 
-                file_pos += next_area_last_block * ENCRYPT_BLOCK_SIZE + block_space
+                pos += chunk_step
 
         # Remove metadata
         f.seek(-len(metadata), 2)
