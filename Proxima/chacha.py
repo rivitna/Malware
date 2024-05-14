@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2022-2023 Andrey Zhdanov (rivitna)
+# Copyright (c) 2022-2024 Andrey Zhdanov (rivitna)
 # https://github.com/rivitna
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -26,60 +26,93 @@ import struct
 
 
 KEY_SIZE = 32
+
 NONCE_SIZE1 = 8
 NONCE_SIZE2 = 12
-
-HCHACHA_NONCE_SIZE = 16
+XNONCE_SIZE = 24
+HNONCE_SIZE = 16
 
 BLOCK_SIZE = 64
 
 
+CONSTANTS = b'expand 32-byte k'
+
+
 MASK32 = 0xFFFFFFFF
 
-add32 = lambda x, y: (x + y) & MASK32
+_add32 = lambda x, y: (x + y) & MASK32
 
-xor32 = lambda x, y: (x ^ y) & MASK32
+_xor32 = lambda x, y: (x ^ y) & MASK32
 
-rol32 = lambda v, s: ((v << s) & MASK32) | ((v & MASK32) >> (32 - s))
+_rol32 = lambda v, s: ((v << s) & MASK32) | ((v & MASK32) >> (32 - s))
+
+
+def _quarter_round(x, a, b, c, d):
+    """Perform a ChaCha quarter round"""
+
+    x[a] = _add32(x[a], x[b])
+    x[d] = _rol32(_xor32(x[d], x[a]), 16)
+
+    x[c] = _add32(x[c], x[d])
+    x[b] = _rol32(_xor32(x[b], x[c]), 12)
+
+    x[a] = _add32(x[a], x[b])
+    x[d] = _rol32(_xor32(x[d], x[a]), 8)
+
+    x[c] = _add32(x[c], x[d])
+    x[b] = _rol32(_xor32(x[b], x[c]), 7)
+
+
+def _double_round(x):
+    """Perform two rounds of ChaCha cipher"""
+
+    _quarter_round(x, 0, 4, 8, 12)
+    _quarter_round(x, 1, 5, 9, 13)
+    _quarter_round(x, 2, 6, 10, 14)
+    _quarter_round(x, 3, 7, 11, 15)
+    _quarter_round(x, 0, 5, 10, 15)
+    _quarter_round(x, 1, 6, 11, 12)
+    _quarter_round(x, 2, 7, 8, 13)
+    _quarter_round(x, 3, 4, 9, 14)
+
+
+def _words_to_bytes(state):
+    """Convert state to little endian bytestream"""
+
+    return struct.pack('<16L', *state)
+
+
+def _bytes_to_words(data):
+    """Convert a bytearray to array of word sized ints"""
+
+    return list(struct.unpack('<' + str(len(data) // 4) + 'L', data))
+
+
+def hchacha(key, nonce):
+    """Pure python implementation of HChaCha"""
+
+    if len(key) != KEY_SIZE:
+        raise ValueError('Key must be 32 bytes long')
+
+    if len(nonce) != HNONCE_SIZE:
+        raise ValueError('Nonce must be 16 bytes long')
+
+    k = _bytes_to_words(key)
+    n = _bytes_to_words(nonce)
+
+    state = _bytes_to_words(CONSTANTS) + k + n
+
+    for _ in range(0, 10):
+        # Perform two rounds of ChaCha cipher
+        _double_round(state)
+
+    res = state[0:4] + state[12:16]
+    return struct.pack('<8L', *res)
 
 
 class ChaCha(object):
 
     """Pure python implementation of ChaCha cipher"""
-
-    constants = [0x61707865, 0x3320646E, 0x79622D32, 0x6B206574]
-
-
-    @staticmethod
-    def quarter_round(x, a, b, c, d):
-        """Perform a ChaCha quarter round"""
-
-        x[a] = add32(x[a], x[b])
-        x[d] = rol32(xor32(x[d], x[a]), 16)
-
-        x[c] = add32(x[c], x[d])
-        x[b] = rol32(xor32(x[b], x[c]), 12)
-
-        x[a] = add32(x[a], x[b])
-        x[d] = rol32(xor32(x[d], x[a]), 8)
-
-        x[c] = add32(x[c], x[d])
-        x[b] = rol32(xor32(x[b], x[c]), 7)
-
-
-    @staticmethod
-    def double_round(x):
-        """Perform two rounds of ChaCha cipher"""
-
-        ChaCha.quarter_round(x, 0, 4, 8, 12)
-        ChaCha.quarter_round(x, 1, 5, 9, 13)
-        ChaCha.quarter_round(x, 2, 6, 10, 14)
-        ChaCha.quarter_round(x, 3, 7, 11, 15)
-        ChaCha.quarter_round(x, 0, 5, 10, 15)
-        ChaCha.quarter_round(x, 1, 6, 11, 12)
-        ChaCha.quarter_round(x, 2, 7, 8, 13)
-        ChaCha.quarter_round(x, 3, 4, 9, 14)
-
 
     @staticmethod
     def chacha_core(state, rounds):
@@ -89,26 +122,12 @@ class ChaCha(object):
 
         for _ in range(0, rounds // 2):
             # Perform two rounds of ChaCha cipher
-            ChaCha.double_round(working_state)
+            _double_round(working_state)
 
         for i in range(len(working_state)):
-            working_state[i] = add32(state[i], working_state[i])
+            working_state[i] = _add32(state[i], working_state[i])
 
-        return ChaCha.words_to_bytes(working_state)
-
-
-    @staticmethod
-    def words_to_bytes(state):
-        """Convert state to little endian bytestream"""
-
-        return struct.pack('<16L', *state)
-
-
-    @staticmethod
-    def _bytes_to_words(data):
-        """Convert a bytearray to array of word sized ints"""
-
-        return list(struct.unpack('<' + str(len(data) // 4) + 'L', data))
+        return _words_to_bytes(working_state)
 
 
     def __init__(self, key, nonce=NONCE_SIZE2 * b'\0', counter=0, rounds=20):
@@ -117,18 +136,25 @@ class ChaCha(object):
         if len(key) != KEY_SIZE:
             raise ValueError('Key must be 32 bytes long')
 
+        if len(nonce) == XNONCE_SIZE:
+            # XChaCha20
+            key = hchacha(key, nonce[:HNONCE_SIZE])
+            nonce = b'\0\0\0\0' + nonce[HNONCE_SIZE:]
+
         if len(nonce) == NONCE_SIZE1:
+            # ChaCha20
             nonce = b'\0\0\0\0' + nonce
+
         elif len(nonce) != NONCE_SIZE2:
-            raise ValueError('Nonce must be 8 or 12 bytes long')
+            raise ValueError('Nonce must be 8/12 or 24 bytes long (XChaCha20)')
 
         self.rounds = rounds
         self.block_pos = 0
 
         # Convert bytearray key and nonce to little endian 32 bit unsigned ints
-        key = ChaCha._bytes_to_words(key)
-        nonce = ChaCha._bytes_to_words(nonce)
-        self.state = ChaCha.constants + key + [counter] + nonce
+        key = _bytes_to_words(key)
+        nonce = _bytes_to_words(nonce)
+        self.state = _bytes_to_words(CONSTANTS) + key + [counter] + nonce
 
 
     def _encrypt_block(self, block):
@@ -148,7 +174,7 @@ class ChaCha(object):
         if block_pos >= BLOCK_SIZE:
             block_pos = 0
             # Increase block counter
-            self.state[12] = add32(self.state[12], 1)
+            self.state[12] = _add32(self.state[12], 1)
 
         self.block_pos = block_pos
 
@@ -180,25 +206,3 @@ class ChaCha(object):
         """Decrypt the data"""
 
         return self.encrypt(ciphertext)
-
-
-def hchacha(key, nonce):
-    """Pure python implementation of HChaCha"""
-
-    if len(key) != KEY_SIZE:
-        raise ValueError('Key must be 32 bytes long')
-
-    if len(nonce) != HCHACHA_NONCE_SIZE:
-        raise ValueError('Nonce must be 16 bytes long')
-
-    key = ChaCha._bytes_to_words(key)
-    nonce = ChaCha._bytes_to_words(nonce)
-
-    state = ChaCha.constants + key + nonce
-
-    for _ in range(0, 10):
-        # Perform two rounds of ChaCha cipher
-        ChaCha.double_round(state)
-
-    res = state[0:4] + state[12:16]
-    return struct.pack('<8L', *res)
