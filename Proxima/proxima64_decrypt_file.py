@@ -91,14 +91,13 @@ def is_file_encrypted(filename: str,
 
     with io.open(filename, 'rb') as f:
 
-        additional_data_size = METADATA_SIZE
+        footer_size = METADATA_SIZE
         if session_key_data_present:
-            additional_data_size += (4 +
-                                     proxima_crypt.ENC_SESSION_KEY_DATA_SIZE)
+            footer_size += 4 + proxima_crypt.ENC_SESSION_KEY_DATA_SIZE
 
         # Read metadata
         try:
-            f.seek(-additional_data_size, 2)
+            f.seek(-footer_size, 2)
         except OSError:
             return False
 
@@ -124,14 +123,13 @@ def decrypt_file(filename: str,
 
     with io.open(filename, 'rb+') as f:
 
-        additional_data_size = METADATA_SIZE
+        footer_size = METADATA_SIZE
         if session_key_data_present:
-            additional_data_size += (4 +
-                                     proxima_crypt.ENC_SESSION_KEY_DATA_SIZE)
+            footer_size += 4 + proxima_crypt.ENC_SESSION_KEY_DATA_SIZE
 
         # Read metadata
         try:
-            f.seek(-additional_data_size, 2)
+            f.seek(-footer_size, 2)
         except OSError:
             return False
 
@@ -176,7 +174,7 @@ def decrypt_file(filename: str,
             block_space, = struct.unpack_from('<Q', cfg, 8)
 
         # Remove metadata
-        f.seek(-additional_data_size, 2)
+        f.seek(-footer_size, 2)
         f.truncate()
 
         # Decrypt file data
