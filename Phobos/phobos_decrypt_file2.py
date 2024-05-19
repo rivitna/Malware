@@ -40,7 +40,7 @@ AES_IV_SIZE = 16
 PADDING_SIZE_POS = 0x24
 ENC_KEY_DATA_POS = 0x28
 RSA_KEY_SIZE = 128
-ADDITIONAL_DATA_SIZE_POS = 0xA8
+FOOTER_SIZE_POS = 0xA8
 ATTACKER_ID_POS = 0xAC
 ATTACKER_ID_SIZE = 6
 
@@ -95,19 +95,18 @@ def decrypt_file2(filepath: str, key_data: bytes) -> bool:
         else:
             return False
 
-        # Additional data size including metadata
-        additional_data_size, = struct.unpack_from('<L', metadata,
-                                                   ADDITIONAL_DATA_SIZE_POS)
-        if additional_data_size <= METADATA_SIZE:
+        # Footer size including metadata
+        footer_size, = struct.unpack_from('<L', metadata, FOOTER_SIZE_POS)
+        if footer_size <= METADATA_SIZE:
             return False
 
         # Read end block with encryption info
-        endblock_size = additional_data_size - METADATA_SIZE
+        endblock_size = footer_size - METADATA_SIZE
         if (endblock_size & 0xF) != 0:
             return False
 
         try:
-            f.seek(-additional_data_size, 2)
+            f.seek(-footer_size, 2)
         except OSError:
             return False
         
@@ -178,8 +177,8 @@ def decrypt_file2(filepath: str, key_data: bytes) -> bool:
                 f.seek(chunk_pos)
                 f.write(chunk_data[i * chunk_size : (i + 1) * chunk_size])
 
-            # Remove additional data
-            f.seek(-additional_data_size, 2)
+            # Remove footer
+            f.seek(-footer_size, 2)
             f.truncate()
 
     else:
@@ -204,8 +203,8 @@ def decrypt_file2(filepath: str, key_data: bytes) -> bool:
                     dec_data = cipher.decrypt(enc_data)
                     fout.write(dec_data)
 
-                # Remove additional data
-                fout.seek(-(additional_data_size + padding_size), 2)
+                # Remove footer
+                fout.seek(-(footer_size + padding_size), 2)
                 fout.truncate()
 
     return True
