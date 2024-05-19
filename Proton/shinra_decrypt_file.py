@@ -61,6 +61,7 @@ CHACHA_TAG_SIZE = 16
 CRYPTO_BOX_KEY_DATA_SIZE = (X25519_KEY_SIZE + CHACHA_TAG_SIZE +
                             CHACHA_NONCE_SIZE)
 
+
 # Session key data size
 SESSION_KEY_DATA_SIZE = 2 * X25519_KEY_SIZE
 # Encrypted session key data size
