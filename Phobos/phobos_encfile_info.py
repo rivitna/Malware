@@ -37,7 +37,7 @@ AES_IV_SIZE = 16
 PADDING_SIZE_POS = 0x24
 ENC_KEY_DATA_POS = 0x28
 RSA_KEY_SIZE = 128
-ADDITIONAL_DATA_SIZE_POS = 0xA8
+FOOTER_SIZE_POS = 0xA8
 ATTACKER_ID_POS = 0xAC
 ATTACKER_ID_SIZE = 6
 
@@ -63,19 +63,18 @@ def print_encfile_info(filename: str) -> bool:
         enc_key_data = metadata[ENC_KEY_DATA_POS :
                                 ENC_KEY_DATA_POS + RSA_KEY_SIZE]
 
-        # Additional data size including metadata
-        additional_data_size, = struct.unpack_from('<L', metadata,
-                                                   ADDITIONAL_DATA_SIZE_POS)
-        if additional_data_size <= METADATA_SIZE:
+        # Footer size including metadata
+        footer_size, = struct.unpack_from('<L', metadata, FOOTER_SIZE_POS)
+        if footer_size <= METADATA_SIZE:
             return False
 
         # Read end block with encryption info
-        endblock_size = additional_data_size - METADATA_SIZE
+        endblock_size = footer_size - METADATA_SIZE
         if (endblock_size & 0xF) != 0:
             return False
 
         try:
-            f.seek(-additional_data_size, 2)
+            f.seek(-footer_size, 2)
         except OSError:
             return False
         
@@ -87,7 +86,7 @@ def print_encfile_info(filename: str) -> bool:
         padding_size, = struct.unpack_from('<L', metadata, PADDING_SIZE_POS)
 
     print('attacker id:', binascii.hexlify(attacker_id).decode().upper())
-    print('additional data size: %08X' % additional_data_size)
+    print('footer size: %08X' % footer_size)
     print('end block size: %08X' % endblock_size)
     print('padding size: %d' % padding_size)
 
