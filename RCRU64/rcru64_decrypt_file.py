@@ -69,7 +69,7 @@ FAST_ENC_NONCE = None
 # Metadata
 MAX_METADATA_SIZE = 0x12C
 MIN_METADATA_SIZE = RSA_KEY_SIZE + len(METADATA_MARKER)
-ADDITION_DATA_SIZE = 1
+ADDITIONAL_DATA_SIZE = 1
 
 
 MIN_BIG_FILE_SIZE = 0x1F4000
@@ -256,7 +256,7 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
                     # Full encryption, small file, some blocks
                     print('mode: full encryption, small file, some blocks')
 
-                    enc_size -= ADDITION_DATA_SIZE + 1
+                    enc_size -= ADDITIONAL_DATA_SIZE + 1
 
                     f.seek(0)
                     enc_data = f.read(min(enc_size, ENC_BLOCK_SIZE))
@@ -387,9 +387,9 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
 
                 pos += chunk_step
 
-        file_size -= ADDITION_DATA_SIZE
+        file_size -= ADDITIONAL_DATA_SIZE
 
-        # Remove additional data
+        # Remove footer
         f.truncate(file_size)
 
     return True
