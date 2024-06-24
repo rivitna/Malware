@@ -69,8 +69,8 @@ SETTING_ENC_MODE = 3
 
 # Encrypt modes
 ENC_MODES = {
-    0: "fast",
-    1: "auto"
+    0: 'fast',
+    1: 'auto'
 }
 
 SETTINGS = [
