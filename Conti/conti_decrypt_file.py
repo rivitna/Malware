@@ -33,7 +33,6 @@ import conti_crypt
 
 
 RANSOM_EXT = '.EXTEN'
-RANSOM_EXT = '.GAZPROM'
 
 
 # RSA
