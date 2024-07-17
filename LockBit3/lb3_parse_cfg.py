@@ -455,7 +455,10 @@ for fld in FIELDS:
 
             elif fld[1] == FIELD_TEXT:
 
-                fld_data = data.decode('latin-1')
+                try:
+                    fld_data = data.decode()
+                except UnicodeDecodeError:
+                    fld_data = data.decode('latin-1')
 
             if fld[0] == 'note':
                 save_data_to_file(dest_dir + ransom_note_name, data)
