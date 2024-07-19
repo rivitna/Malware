@@ -86,6 +86,8 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
         elif footer_data.endswith(MODE2_MARKER):
             mode = 2
 
+        print('mode:', mode)
+
         if mode != 0:
             enc_key_data_pos -= MODE_MARKER_SIZE
 
@@ -95,7 +97,10 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
         # Decrypt encryption key (RSA OAEP)
         key_data = enmity_crypt.rsa_decrypt(enc_key_data, priv_key_data)
         if not key_data:
+            print('RSA private key: Failed')
             return False
+
+        print('RSA private key: OK')
 
         # Find name marker ("N:", "K:")
         pos = footer_data.rfind(b':', 0, enc_key_data_pos)
@@ -106,7 +111,13 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
 
         orig_filename = footer_data[pos + 1 : enc_key_data_pos].decode()
 
-        orig_file_size = file_size - (len(footer_data) - (pos - 1))
+        print('original file name: \"%s\"' % orig_filename)
+
+        footer_size = len(footer_data) - (pos - 1)
+        orig_file_size = file_size - footer_size
+
+        print('footer size:', footer_size)
+        print('original file size:', orig_file_size)
 
         key = key_data[:KEY_SIZE]
         nonce = key_data[KEY_SIZE : KEY_SIZE + NONCE_SIZE]
