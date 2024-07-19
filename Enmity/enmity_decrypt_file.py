@@ -89,6 +89,8 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
         print('mode:', mode)
 
         if mode != 0:
+            if enc_key_data_pos < MODE_MARKER_SIZE:
+                return False
             enc_key_data_pos -= MODE_MARKER_SIZE
 
         enc_key_data = footer_data[enc_key_data_pos:
