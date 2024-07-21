@@ -195,13 +195,13 @@ def decrypt_file(filename, metadata):
 # Main
 #
 if len(sys.argv) != 2:
-    print('Usage: '+ sys.argv[0] + ' filename')
+    print('Usage:', os.path.basename(sys.argv[0]), 'filename')
     sys.exit(0)
 
 filename = sys.argv[1]
 
 # Read private RSA key data (d, n)
-with io.open('rsa_privkey.bin', 'rb') as f:
+with io.open('./rsa_privkey.bin', 'rb') as f:
     rsa_priv_key_data = f.read(2 * lb3_crypt.RSA_KEY_SIZE)
 
 # Check if file is encrypted
