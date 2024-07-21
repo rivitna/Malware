@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2023 Andrey Zhdanov (rivitna)
+# Copyright (c) 2023-2024 Andrey Zhdanov (rivitna)
 # https://github.com/rivitna
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     import sys
     import io
 
-    with io.open('rsa_pubkey.bin', 'rb') as f:
+    with io.open('./rsa_pubkey.bin', 'rb') as f:
         rsa_pub_key = f.read()
 
     guid = get_uuid_str(rsa_pub_key)
