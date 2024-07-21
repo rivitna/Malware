@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2023 Andrey Zhdanov (rivitna)
+# Copyright (c) 2023-2024 Andrey Zhdanov (rivitna)
 # https://github.com/rivitna
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -215,9 +215,10 @@ def decrypt(helper_code, data, seed):
 if __name__ == '__main__':
     import sys
     import io
+    import os
 
     if len(sys.argv) != 3:
-        print('Usage: '+ sys.argv[0] + ' filename seed')
+        print('Usage:', os.path.basename(sys.argv[0]), 'filename seed')
         sys.exit(0)
 
     file_name = sys.argv[1]
