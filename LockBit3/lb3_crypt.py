@@ -1,6 +1,6 @@
 # MIT License
 #
-# Copyright (c) 2023 Andrey Zhdanov (rivitna)
+# Copyright (c) 2023-2024 Andrey Zhdanov (rivitna)
 # https://github.com/rivitna
 #
 # Permission is hereby granted, free of charge, to any person obtaining
@@ -187,9 +187,10 @@ def salsa_decrypt(key_data, enc_data):
 if __name__ == '__main__':
     import sys
     import io
+    import os
 
     if len(sys.argv) != 2:
-        print('Usage: '+ sys.argv[0] + ' filename')
+        print('Usage:', os.path.basename(sys.argv[0]), 'filename')
         exit(0)
 
     filename = sys.argv[1]
@@ -197,7 +198,7 @@ if __name__ == '__main__':
     with io.open(filename, 'rb') as f:
         enc_data = f.read()
 
-    with io.open('key.bin', 'rb') as f:
+    with io.open('./key.bin', 'rb') as f:
         key_data = f.read()
 
     data = salsa_decrypt(key_data, enc_data)
