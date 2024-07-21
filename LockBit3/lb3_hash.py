@@ -59,10 +59,10 @@ def get_api_func_name_hash(lib_name, fnc_name):
 if __name__ == '__main__':
     import io
 
-    with io.open('api_names.txt', 'rt') as f:
+    with io.open('./api_names.txt', 'rt') as f:
         func_names = f.read().splitlines()
 
-    with io.open('api_hashes.txt', 'wt') as f:
+    with io.open('./api_hashes.txt', 'wt') as f:
         for name in func_names:
             name = name.strip()
             if (name == ''):
