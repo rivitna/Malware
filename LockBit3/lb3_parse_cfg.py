@@ -249,7 +249,7 @@ def save_data_to_file(file_name, data):
 # Main
 #
 if len(sys.argv) != 2:
-    print('Usage: '+ sys.argv[0] + ' filename')
+    print('Usage:', os.path.basename(sys.argv[0]), 'filename')
     sys.exit(0)
 
 file_name = sys.argv[1]
