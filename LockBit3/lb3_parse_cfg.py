@@ -383,29 +383,29 @@ cfg = {}
 # Settings
 settings = {}
 
-for setting in SETTINGS:
+for stg_name, stg_type in SETTINGS:
 
-    if setting[1] == SETTING_BOOL:
+    if stg_type == SETTING_BOOL:
 
-        settings[setting[0]] = (cfg_data[pos] != 0)
+        settings[stg_name] = (cfg_data[pos] != 0)
         pos += 1
 
-    elif setting[1] == SETTING_WORD:
+    elif stg_type == SETTING_WORD:
 
-        settings[setting[0]], = struct.unpack_from('<H', cfg_data, pos)
+        settings[stg_name], = struct.unpack_from('<H', cfg_data, pos)
         pos += 2
 
-    elif setting[1] == SETTING_ENC_MODE:
+    elif stg_type == SETTING_ENC_MODE:
 
         enc_mode = ENC_MODES.get(cfg_data[pos])
         if enc_mode is not None:
-            settings[setting[0]] = enc_mode
+            settings[stg_name] = enc_mode
         else:
-            settings[setting[0]] = cfg_data[pos]
+            settings[stg_name] = cfg_data[pos]
         pos += 1
 
     else:
-        settings[setting[0]] = cfg_data[pos]
+        settings[stg_name] = cfg_data[pos]
         pos += 1
 
 cfg['settings'] = settings
@@ -413,9 +413,9 @@ cfg['settings'] = settings
 # Fields
 data_pos = pos
 
-for fld in FIELDS:
+for fld_name, fld_type, fld_enc in FIELDS:
 
-    if fld[1] != FIELD_UNKNOWN:
+    if fld_type != FIELD_UNKNOWN:
 
         ofs, = struct.unpack_from('<L', cfg_data, pos)
 
@@ -431,10 +431,10 @@ for fld in FIELDS:
 
             data = base64.b64decode(b64_data)
 
-            if fld[2]:
+            if fld_enc:
                 data = lb3_dec.decrypt(helper_code, data, rnd_seed)
 
-            if fld[1] == FIELD_HASHLIST:
+            if fld_type == FIELD_HASHLIST:
 
                 for i in range(0, len(data), 4):
 
@@ -447,24 +447,24 @@ for fld in FIELDS:
                     s = hash_list.get(h)
                     fld_data += s if (s is not None) else ('0x%08X' % h)
 
-            if fld[1] == FIELD_STRLIST:
+            if fld_type == FIELD_STRLIST:
 
                 fld_data = data.decode('utf-16le')
                 str_list = list(filter(None, fld_data.split('\0')))
                 fld_data = ';'.join(str_list)
 
-            elif fld[1] == FIELD_TEXT:
+            elif fld_type == FIELD_TEXT:
 
                 try:
                     fld_data = data.decode()
                 except UnicodeDecodeError:
                     fld_data = data.decode('latin-1')
 
-            if fld[0] == 'note':
+            if fld_name == 'note':
                 save_data_to_file(dest_dir + ransom_note_name, data)
                 print('ransom note saved to file.')
 
-        cfg[fld[0]] = fld_data
+        cfg[fld_name] = fld_data
 
     pos += 4
 
