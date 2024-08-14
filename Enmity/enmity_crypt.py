@@ -29,7 +29,10 @@ from Crypto.Cipher import AES
 
 
 # Encryption key data marker
-ENC_KEY_MARKER = b'KY'
+ENC_KEY_MARKER_SIZE = 2
+ENC_KEY_MARKER1 = b'KY'
+ENC_KEY_MARKER2 = b'K:'
+
 
 # RSA
 RSA_KEY_SIZE = 512
@@ -41,7 +44,7 @@ MAC_TAG_SIZE = 16
 
 
 # Encrypted session key data size
-MIN_ENC_SESSION_KEY_DATA_SIZE = len(ENC_KEY_MARKER) + RSA_KEY_SIZE
+MIN_ENC_SESSION_KEY_DATA_SIZE = ENC_KEY_MARKER_SIZE + RSA_KEY_SIZE
 
 
 def rsa_decrypt(enc_data: bytes, priv_key_data: bytes) -> bytes:
@@ -81,11 +84,11 @@ def decrypt_session_key_data(enc_session_key_data: bytes,
         return None
 
     enc_data_size = len(enc_session_key_data) - MIN_ENC_SESSION_KEY_DATA_SIZE
-    enc_key_data_pos = enc_data_size + len(ENC_KEY_MARKER)
+    enc_key_data_pos = enc_data_size + ENC_KEY_MARKER_SIZE
 
     # Check key marker
     marker = enc_session_key_data[enc_data_size : enc_key_data_pos]
-    if marker != ENC_KEY_MARKER:
+    if (marker != ENC_KEY_MARKER1) and (marker != ENC_KEY_MARKER2):
         return None
 
     enc_key_data = enc_session_key_data[enc_key_data_pos:]
