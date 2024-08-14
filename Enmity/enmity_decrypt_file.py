@@ -182,11 +182,12 @@ def decrypt_file(filename: str, priv_key_data: bytes) -> bool:
         f.truncate(orig_file_size)
 
     # Restore original file name
-    dest_filename = os.path.join(os.path.abspath(os.path.dirname(filename)),
-                                 orig_filename)
-    if os.path.isfile(dest_filename):
-        os.remove(dest_filename)
-    os.rename(filename, dest_filename)
+    if orig_filename:
+        dir_path = os.path.abspath(os.path.dirname(filename))
+        dest_filename = os.path.join(dir_path, orig_filename)
+        if os.path.isfile(dest_filename):
+            os.remove(dest_filename)
+        os.rename(filename, dest_filename)
         
     return True
 
