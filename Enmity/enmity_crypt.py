@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     filename = sys.argv[1]
 
-    with io.open('rsa_privkey.txt', 'rt') as f:
+    with io.open('./rsa_privkey.txt', 'rt') as f:
         master_priv_key_data = base64.b64decode(f.read())
 
     with io.open(filename, 'rb') as f:
