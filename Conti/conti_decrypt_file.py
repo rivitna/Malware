@@ -69,7 +69,10 @@ def decrypt_file(filename: str, priv_key: RSA.RsaKey) -> bool:
         enc_key_data = metadata[:RSA_KEY_SIZE]
         key_data = conti_crypt.rsa_decrypt(enc_key_data, priv_key)
         if not key_data:
+            print('RSA private key: Failed')
             return False
+
+        print('RSA private key: OK')
 
         key = key_data[:CHACHA_KEY_SIZE]
         nonce = key_data[CHACHA_KEY_SIZE:
@@ -77,12 +80,15 @@ def decrypt_file(filename: str, priv_key: RSA.RsaKey) -> bool:
 
         orig_file_size, = struct.unpack_from('<Q', metadata,
                                              RSA_KEY_SIZE + 14)
+        print('original file size:', orig_file_size)
 
         enc_mode = metadata[RSA_KEY_SIZE + 12]
 
         if enc_mode == 0x24:
 
             # full
+            print('mode: full')
+
             num_chunks = 1
             chunk_space = 0
             chunk_size = orig_file_size
@@ -90,6 +96,8 @@ def decrypt_file(filename: str, priv_key: RSA.RsaKey) -> bool:
         elif enc_mode == 0x26:
 
             # header
+            print('mode: header')
+
             num_chunks = 1
             chunk_space = 0
             chunk_size = min(HEADER_ENC_SIZE, orig_file_size)
@@ -97,6 +105,8 @@ def decrypt_file(filename: str, priv_key: RSA.RsaKey) -> bool:
         elif enc_mode == 0x25:
 
             # partly
+            print('mode: partly')
+
             enc_percent = metadata[RSA_KEY_SIZE + 13]
             if enc_percent == 10:
                 chunk_size = (orig_file_size // 100) * 4
@@ -143,9 +153,13 @@ def decrypt_file(filename: str, priv_key: RSA.RsaKey) -> bool:
                 num_chunks = 3
                 chunk_space = (orig_file_size - (chunk_size * 3)) // 2;
             else:
+                print('encryption percent: unsupported')
                 return False
 
+            print('encryption percent:', enc_percent)
+
         else:
+            print('mode: unknown')
             return False
 
         # Decrypt chunks
